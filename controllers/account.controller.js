@@ -75,7 +75,7 @@ exports.login = (req, res) => {
               dateOfBirth: newObject.dateOfBirth,
             },
             process.env.SECRET_KEY,
-            { expiresIn: "1h" }
+            { expiresIn: "3h" }
           );
           res.json({ token });
         });

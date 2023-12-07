@@ -69,7 +69,8 @@ exports.purchaseProduct = async (req, res) => {
         if (err) {
           return res.status(400).json({ err1Msg: err });
         }
-        //Check order customer
+
+        // Check if there is an existing order for the customer
         if (orderCustomer.length > 0) {
           db.query(
             "select * from order_detail where order_customer_id = ? and product_id = ?",
@@ -78,10 +79,10 @@ exports.purchaseProduct = async (req, res) => {
               if (err) {
                 return res.status(400).json({ err12Msg: err });
               }
-              //Check order detail
+
+              //Check existing order detail for this customer
               if (orderDetail.length > 0) {
                 let result = orderDetail[0].quantity - quantity;
-                // 2 - 4 // result = -2
                 db.query(
                   "select * from product where id = ?",
                   [product_id],
@@ -90,7 +91,8 @@ exports.purchaseProduct = async (req, res) => {
                       return res.status(400).json({ err112Msg: err });
                     }
                     let newStock = product[0].stock + result;
-                    //104 + (-2) = 102
+
+                    //Check stock product
                     if (newStock >= 0) {
                       db.query(
                         "update product set stock = ? where id = ?",
@@ -129,6 +131,8 @@ exports.purchaseProduct = async (req, res) => {
                     return res.status(400).json({ err1111Msg: err });
                   }
                   let newStock2 = product[0].stock - quantity;
+
+                  //Check stock product
                   if (newStock2 >= 0) {
                     db.query(
                       "update product set stock = ? where id = ?",
@@ -139,6 +143,8 @@ exports.purchaseProduct = async (req, res) => {
                             .status(400)
                             .json({ updateProductMsg: err });
                         }
+
+                        // Add new order detail
                         db.query(
                           "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
                           [orderCustomer[0].id, product_id, quantity, price],
@@ -164,6 +170,8 @@ exports.purchaseProduct = async (req, res) => {
           );
           return;
         }
+
+        // Create a new order for the customer
         db.query(
           "insert into order_customer (customer_id,address,order_status) values(?,?,?)",
           [customer_id, "", "CURRENT"],
@@ -225,16 +233,39 @@ exports.purchaseProduct = async (req, res) => {
 
 exports.deleteOrder = (req, res) => {
   const id = req.params.id;
-  const { product_id } = req.body;
+  const { order_customer_id, product_id, quantity, price } = req.body;
   try {
     db.query(
-      "delete from order_detail where order_customer_id = ? and product_id",
-      [id, product_id],
-      (err, data) => {
+      "select * from product where id = ?",
+      [product_id],
+      (err, product) => {
         if (err) {
           return res.status(400).json({ msg: err });
         }
-        return res.json({ msg: "Delete product successfully!" });
+
+        //Add stock
+        let newStock = product[0].stock + quantity;
+        db.query(
+          "update product set stock = ? where id = ?",
+          [newStock, product_id],
+          (err, update) => {
+            if (err) {
+              return res.status(400).json({ msg: err });
+            }
+
+            //delete order detail
+            db.query(
+              "delete from order_detail where order_customer_id = ? and product_id",
+              [id, product_id],
+              (err, data) => {
+                if (err) {
+                  return res.status(400).json({ msg: err });
+                }
+                return res.json({ msg: "Delete product successfully!" });
+              }
+            );
+          }
+        );
       }
     );
   } catch (err) {}

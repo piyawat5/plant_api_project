@@ -22,7 +22,7 @@ routes.delete(
 
 //favorite
 routes.get(
-  "/customer/favorite",
+  "/customer/favorite/:id",
   verifyToken,
   customerControllers.allFavoriteProduct
 );

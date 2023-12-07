@@ -100,17 +100,35 @@ exports.allFavoriteProduct = (req, res) => {
 exports.addFavorite = (req, res) => {
   const { product_id, customer_id } = req.body;
   try {
+    //Check duplicate
     db.query(
-      "insert into favorite values(?,?)",
+      "select * from favorite where product_id = ? and customer_id = ?",
       [product_id, customer_id],
       (err, favorite) => {
         if (err) {
-          return res.status(400).json({ favoriteMsg: err });
+          return res.status(400).json({ err });
         }
-        res.json({ addFavoriteMsg: "Add favorite successfully!" });
+
+        if (favorite.length > 0) {
+          res.status(409).json({ msg: "favorite duplicate" });
+          return;
+        }
+        db.query(
+          "insert into favorite (product_id,customer_id) values(?,?)",
+          [product_id, customer_id],
+          (err, favorite) => {
+            if (err) {
+              return res.status(400).json({ favoriteMsg: err });
+            }
+            res.json({ addFavoriteMsg: "Add favorite successfully!" });
+            return;
+          }
+        );
       }
     );
-  } catch (error) {}
+  } catch (error) {
+    res.status(500).json({ catchErr: error });
+  }
 };
 
 exports.deleteFavorite = (req, res) => {
