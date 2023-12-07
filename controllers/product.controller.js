@@ -30,7 +30,7 @@ exports.editProduct = (req, res) => {
   try {
     db.query(
       "update product set name=?,stock=?,price=?,image=?,description=? where id=?",
-      [id],
+      [id, category_id, name, stock, price, image, description],
       (err, product) => {
         if (err) {
           return res.status(400).json({ editMsg: err });

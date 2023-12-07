@@ -38,14 +38,16 @@ exports.findOrderById = (req, res) => {
         );
       }
     );
-  } catch (err) {}
+  } catch (err) {
+    res.status(500).json({ msg: err });
+  }
 };
 
 exports.findMyOrder = (req, res) => {
   const customerId = req.params.customerId;
   try {
     db.query(
-      "select * from order_customer where id = ?",
+      "select * from order_customer where customer_id = ?",
       [customerId],
       (err, myOrder) => {
         if (err) {
@@ -57,7 +59,7 @@ exports.findMyOrder = (req, res) => {
   } catch (err) {}
 };
 
-exports.purchaseProduct = (req, res) => {
+exports.purchaseProduct = async (req, res) => {
   const { customer_id, product_id, quantity, price } = req.body;
   try {
     db.query(
@@ -72,13 +74,14 @@ exports.purchaseProduct = (req, res) => {
           db.query(
             "select * from order_detail where order_customer_id = ? and product_id = ?",
             [orderCustomer[0].id, product_id],
-            (err, orderDetail) => {
+            async (err, orderDetail) => {
               if (err) {
                 return res.status(400).json({ err12Msg: err });
               }
               //Check order detail
-              if (orderDetail[0].length > 0) {
+              if (orderDetail.length > 0) {
                 let result = orderDetail[0].quantity - quantity;
+                // 2 - 4 // result = -2
                 db.query(
                   "select * from product where id = ?",
                   [product_id],
@@ -87,6 +90,7 @@ exports.purchaseProduct = (req, res) => {
                       return res.status(400).json({ err112Msg: err });
                     }
                     let newStock = product[0].stock + result;
+                    //104 + (-2) = 102
                     if (newStock >= 0) {
                       db.query(
                         "update product set stock = ? where id = ?",
@@ -96,8 +100,8 @@ exports.purchaseProduct = (req, res) => {
                             return res.status(400).json({ err113Msg: err });
                           }
                           db.query(
-                            "update order_detail set quantity = ?",
-                            [quantity],
+                            "update order_detail set quantity = ? where order_customer_id = ? and product_id = ?",
+                            [quantity, orderCustomer[0].id, product_id],
                             (err, updateOrderDetail) => {
                               if (err) {
                                 return res.status(400).json({ err13Msg: err });
@@ -109,7 +113,9 @@ exports.purchaseProduct = (req, res) => {
                           );
                         }
                       );
+                      return;
                     }
+                    return res.status(400).json({ msg: "Stock not enough" });
                   }
                 );
 
@@ -122,11 +128,11 @@ exports.purchaseProduct = (req, res) => {
                   if (err) {
                     return res.status(400).json({ err1111Msg: err });
                   }
-                  let result = product.stock - quantity;
-                  if (result >= 0) {
+                  let newStock2 = product[0].stock - quantity;
+                  if (newStock2 >= 0) {
                     db.query(
                       "update product set stock = ? where id = ?",
-                      [result, product.id],
+                      [newStock2, product[0].id],
                       (err, updateProduct) => {
                         if (err) {
                           return res
@@ -135,7 +141,7 @@ exports.purchaseProduct = (req, res) => {
                         }
                         db.query(
                           "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
-                          [data1[0].id, product_id, quantity, price],
+                          [orderCustomer[0].id, product_id, quantity, price],
                           (err, insertOrderDetail) => {
                             if (err) {
                               return res.status(400).json({ data14Msg: err });
@@ -147,7 +153,11 @@ exports.purchaseProduct = (req, res) => {
                         );
                       }
                     );
+                    return;
                   }
+                  return res.status(400).json({
+                    msgNotEnough: "Stock not enough",
+                  });
                 }
               );
             }
@@ -198,6 +208,7 @@ exports.purchaseProduct = (req, res) => {
                           );
                         }
                       );
+                      return;
                     }
                   }
                 );
@@ -207,7 +218,9 @@ exports.purchaseProduct = (req, res) => {
         );
       }
     );
-  } catch (err) {}
+  } catch (err) {
+    return res.json({ catchErrMsg: err });
+  }
 };
 
 exports.deleteOrder = (req, res) => {
