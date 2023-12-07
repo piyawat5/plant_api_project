@@ -63,41 +63,91 @@ exports.purchaseProduct = (req, res) => {
     db.query(
       "select * from order_customer where customer_id = ? and order_status = ?",
       [customer_id, "CURRENT"],
-      (err, data1) => {
+      (err, orderCustomer) => {
         if (err) {
-          return res.status(400).json({ data1Msg: err });
+          return res.status(400).json({ err1Msg: err });
         }
         //Check order customer
-        if (data1.length > 0) {
+        if (orderCustomer.length > 0) {
           db.query(
             "select * from order_detail where order_customer_id = ? and product_id = ?",
-            [data1[0].id, product_id],
-            (err, data12) => {
+            [orderCustomer[0].id, product_id],
+            (err, orderDetail) => {
               if (err) {
-                return res.status(400).json({ data12Msg: err });
+                return res.status(400).json({ err12Msg: err });
               }
               //Check order detail
-              if (data12.length > 0) {
+              if (orderDetail[0].length > 0) {
+                let result = orderDetail[0].quantity - quantity;
                 db.query(
-                  "update order_detail set quantity = ?",
-                  [quantity],
-                  (err, data13) => {
+                  "select * from product where id = ?",
+                  [product_id],
+                  (err, product) => {
                     if (err) {
-                      return res.status(400).json({ data13Msg: err });
+                      return res.status(400).json({ err112Msg: err });
                     }
-                    return res.json({ msg13: "Add to cart successfully!" });
+                    let newStock = product[0].stock + result;
+                    if (newStock >= 0) {
+                      db.query(
+                        "update product set stock = ? where id = ?",
+                        [newStock, product_id],
+                        (err, updateProduct) => {
+                          if (err) {
+                            return res.status(400).json({ err113Msg: err });
+                          }
+                          db.query(
+                            "update order_detail set quantity = ?",
+                            [quantity],
+                            (err, updateOrderDetail) => {
+                              if (err) {
+                                return res.status(400).json({ err13Msg: err });
+                              }
+                              return res.json({
+                                msg13: "Add to cart successfully!",
+                              });
+                            }
+                          );
+                        }
+                      );
+                    }
                   }
                 );
+
                 return;
               }
               db.query(
-                "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
-                [data1[0].id, product_id, quantity, price],
-                (err, data11) => {
+                "select * from product where id = ?",
+                [product_id],
+                (err, product) => {
                   if (err) {
-                    return res.status(400).json({ data14Msg: err });
+                    return res.status(400).json({ err1111Msg: err });
                   }
-                  return res.json({ msg14: "Add to cart successfully!" });
+                  let result = product.stock - quantity;
+                  if (result >= 0) {
+                    db.query(
+                      "update product set stock = ? where id = ?",
+                      [result, product.id],
+                      (err, updateProduct) => {
+                        if (err) {
+                          return res
+                            .status(400)
+                            .json({ updateProductMsg: err });
+                        }
+                        db.query(
+                          "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
+                          [data1[0].id, product_id, quantity, price],
+                          (err, insertOrderDetail) => {
+                            if (err) {
+                              return res.status(400).json({ data14Msg: err });
+                            }
+                            return res.json({
+                              msg14: "Add to cart successfully!",
+                            });
+                          }
+                        );
+                      }
+                    );
+                  }
                 }
               );
             }
@@ -107,25 +157,48 @@ exports.purchaseProduct = (req, res) => {
         db.query(
           "insert into order_customer (customer_id,address,order_status) values(?,?,?)",
           [customer_id, "", "CURRENT"],
-          (err, data2) => {
+          (err, insertOrderCustomer) => {
             if (err) {
               return res.status(400).json({ data2Msg: err });
             }
             db.query(
               "select * from order_customer where customer_id = ?",
               [customer_id],
-              (err, data3) => {
+              (err, orderCustomer) => {
                 if (err) {
                   return res.status(400).json({ data3Msg: err });
                 }
                 db.query(
-                  "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
-                  [data3[0].id, product_id, quantity, price],
-                  (err, data4) => {
+                  "select * from product where id = ?",
+                  [product_id],
+                  (err, product) => {
                     if (err) {
-                      return res.status(400).json({ data4Msg: err });
+                      return res.status(400).json({ data44Msg: err });
                     }
-                    return res.json({ msg4: "Add to cart Successfully!" });
+                    let result = product[0].stock - quantity;
+                    if (result >= 0) {
+                      db.query(
+                        "update product set stock = ? where id = ?",
+                        [result, product_id],
+                        (err, updateProduct) => {
+                          if (err) {
+                            return res.status(400).json({ data445Msg: err });
+                          }
+                          db.query(
+                            "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
+                            [orderCustomer[0].id, product_id, quantity, price],
+                            (err, data4) => {
+                              if (err) {
+                                return res.status(400).json({ data4Msg: err });
+                              }
+                              return res.json({
+                                msg4: "Add to cart Successfully!",
+                              });
+                            }
+                          );
+                        }
+                      );
+                    }
                   }
                 );
               }

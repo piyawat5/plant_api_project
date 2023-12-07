@@ -45,7 +45,7 @@ routes.get(
   verifyToken,
   orderControllers.findMyOrder
 );
-routes.post("/order", verifyToken, orderControllers.purchaseProduct);
+routes.post("/order/purchase", verifyToken, orderControllers.purchaseProduct);
 routes.delete("/order/delete/:id", verifyToken, orderControllers.deleteOrder);
 
 //product
