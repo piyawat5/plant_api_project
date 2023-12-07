@@ -4,16 +4,22 @@ const customerControllers = require("../controllers/customer.controller");
 const orderControllers = require("../controllers/order.controller");
 const productControllers = require("../controllers/product.controller");
 const verifyToken = require("../config/jwt");
+const cloudinary = require("../config/cloudinary");
 
 //Account
 routes.post("/register", accountControllers.register);
+
 routes.post("/login", accountControllers.login);
+
 routes.post("/authen", accountControllers.authen);
 
 //customer
 routes.get("/customer", verifyToken, customerControllers.allCustomer);
+
 routes.get("/customer/:id", verifyToken, customerControllers.findCustomerById);
+
 routes.put("/customer/edit", verifyToken, customerControllers.editCustomer);
+
 routes.delete(
   "/customer/delete/:id",
   verifyToken,
@@ -26,11 +32,13 @@ routes.get(
   verifyToken,
   customerControllers.allFavoriteProduct
 );
+
 routes.post(
   "/customer/favorite/create",
   verifyToken,
   customerControllers.addFavorite
 );
+
 routes.delete(
   "/customer/favorite/delete",
   verifyToken,
@@ -39,24 +47,39 @@ routes.delete(
 
 //order
 routes.get("/order", verifyToken, orderControllers.allOrders);
+
 routes.get("/order/:id", verifyToken, orderControllers.findOrderById);
+
 routes.get(
   "/order/myOrder/:customerId",
   verifyToken,
   orderControllers.findMyOrder
 );
+
 routes.post("/order/purchase", verifyToken, orderControllers.purchaseProduct);
+
 routes.delete("/order/delete/:id", verifyToken, orderControllers.deleteOrder);
 
 //product
 routes.get("/product", verifyToken, productControllers.allProducts);
+
 routes.get("/product/:id", verifyToken, productControllers.findProductById);
+
 routes.post("/product/create", verifyToken, productControllers.createProduct);
+
 routes.put("/product/edit", verifyToken, productControllers.editProduct);
+
 routes.delete(
   "/product/delete/:id",
   verifyToken,
   productControllers.deleteProduct
 );
+
+//upload image
+routes.post("/upload", verifyToken, (req, res) => {
+  cloudinary(req.body.image)
+    .then((url) => res.json(url))
+    .catch((err) => res.status(500).json({ err }));
+});
 
 module.exports = routes;
