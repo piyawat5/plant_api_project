@@ -76,10 +76,10 @@ routes.delete(
 );
 
 //upload image
-routes.post("/upload", verifyToken, (req, res) => {
+routes.post("/uploadImage", (req, res) => {
   cloudinary(req.body.image)
-    .then((url) => res.json(url))
-    .catch((err) => res.status(500).json({ err }));
+    .then((url) => res.send(url))
+    .catch((err) => res.status(500).send(err));
 });
 
 module.exports = routes;
