@@ -3,6 +3,29 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
+/**
+ * @swagger
+ * /account/register:
+ *  post:
+ *    summary: Create new accout
+ *    tags: [Account]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/RegisterRequest'
+ *    responses:
+ *      201:
+ *        description: The account was successfully created
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/RegisterResponse'
+ *      409:
+ *        description: deplicate username
+ */
+
 exports.register = (req, res) => {
   const { email, password, fname, lname, dateOfBirth } = req.body;
   bcrypt.hash(password, 10, (err, hash) => {
@@ -15,7 +38,6 @@ exports.register = (req, res) => {
             res.status(409).json({ messageInsertAccount: err });
             return;
           }
-
           db.query(
             "select * from account where email = ?",
             [email],
@@ -30,7 +52,6 @@ exports.register = (req, res) => {
                   if (err) {
                     return res.status(409).json({ messageCreateCustomer: err });
                   }
-
                   return res.json({ message: "Create account successfully!" });
                 }
               );
@@ -44,6 +65,29 @@ exports.register = (req, res) => {
     }
   });
 };
+
+/**
+ * @swagger
+ * /account/login:
+ *  post:
+ *    summary: Login and response jwt token
+ *    tags: [Account]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/LoginRequest'
+ *    responses:
+ *      200:
+ *        description: The token was successfully created
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/LoginResponse'
+ *      404:
+ *        description: Un Authenticated
+ */
 
 exports.login = (req, res) => {
   const { email, password } = req.body;
@@ -86,6 +130,24 @@ exports.login = (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /account/authen:
+ *  get:
+ *    summary: Authorization
+ *    tags: [Account]
+ *    responses:
+ *      200:
+ *        description: Authorization
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/AuthenResponse'
+ *      401:
+ *        description: Un Authenticated
+ *    security: [{bearerAuth: []}]
+ */
+
 exports.authen = (req, res) => {
   const token = req.headers.authorization.split(" ")[1];
   try {
@@ -100,3 +162,96 @@ exports.authen = (req, res) => {
     res.status(404).json({ message: err });
   }
 };
+
+/**
+ * @swagger
+ * tags:
+ *    name: Account
+ *    description: Account management API
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *    RegisterRequest:
+ *      type: object
+ *      required:
+ *        -username
+ *        -password
+ *        -role
+ *      properties:
+ *        username:
+ *          type: string
+ *          description: The account username
+ *        password:
+ *          type: string
+ *          description: The account password
+ *        role:
+ *          type: string
+ *          description: The account role
+ *    RegisterResponse:
+ *      type: object
+ *      properties:
+ *        id:
+ *          type: string
+ *          description: The auto-generated id of the account
+ *        username:
+ *          type: string
+ *          description: The account username
+ *        password:
+ *          type: string
+ *          description: The account password
+ *        role:
+ *          type: string
+ *          description: The account role
+ *        created_at:
+ *          type: string
+ *          description: The account created
+ *        updated_at:
+ *          type: string
+ *          description: The account updated
+ *
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *    LoginRequest:
+ *      type: object
+ *      required:
+ *        -email
+ *        -password
+ *      properties:
+ *        email:
+ *          type: string
+ *          description: The account username
+ *        password:
+ *          type: string
+ *          description: The account username
+ *    LoginResponse:
+ *      type: object
+ *      properties:
+ *        token:
+ *          type: string
+ *          description: Then JWT token
+ *    AuthenResponse:
+ *      Type: object
+ *      properties:
+ *        email:
+ *          type: string
+ *          description: The account username
+ *        fname:
+ *          type: string
+ *          description: The account username
+ *        lname:
+ *          type: string
+ *          description: The account username
+ *        dateOfBirth:
+ *          type: date
+ *          description: The account username
+ *        id:
+ *          type: number
+ *          description: The account username
+ */

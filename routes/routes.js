@@ -7,11 +7,11 @@ const verifyToken = require("../config/jwt");
 const cloudinary = require("../config/cloudinary");
 
 //Account
-routes.post("/register", accountControllers.register);
+routes.post("/account/register", accountControllers.register);
 
-routes.post("/login", accountControllers.login);
+routes.post("/account/login", accountControllers.login);
 
-routes.post("/authen", accountControllers.authen);
+routes.get("/account/authen", accountControllers.authen);
 
 //customer
 routes.get("/customer", verifyToken, customerControllers.allCustomer);
@@ -76,7 +76,7 @@ routes.delete(
 );
 
 //upload image
-routes.post("/uploadImage", (req, res) => {
+routes.post("/uploadImage", verifyToken, (req, res) => {
   cloudinary(req.body.image)
     .then((url) => res.send(url))
     .catch((err) => res.status(500).send(err));
