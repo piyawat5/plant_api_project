@@ -86,7 +86,7 @@ exports.register = (req, res) => {
  *            schema:
  *              $ref: '#/components/schemas/LoginResponse'
  *      404:
- *        description: Un Authenticated
+ *        description: Invalid email or password
  */
 
 exports.login = (req, res) => {
@@ -109,19 +109,23 @@ exports.login = (req, res) => {
             res.status(404).json({ messageComparePassword: err });
             return;
           }
-          const { password, ...newObject } = loginRes[0];
-          const token = jwt.sign(
-            {
-              id: newObject.id,
-              email: newObject.email,
-              fname: newObject.fname,
-              lname: newObject.lname,
-              dateOfBirth: newObject.dateOfBirth,
-            },
-            process.env.SECRET_KEY,
-            { expiresIn: "3h" }
+          db.query(
+            "select * from customer where account_id = ?",
+            [loginRes[0].id],
+            (err, customer) => {
+              const { password, ...accountObject } = loginRes[0];
+              const { fname, lname, email, ...customerObject } = customer[0];
+              const token = jwt.sign(
+                {
+                  ...accountObject,
+                  customer: customerObject,
+                },
+                process.env.SECRET_KEY,
+                { expiresIn: "3h" }
+              );
+              res.json({ token });
+            }
           );
-          res.json({ token });
         });
       }
     );
@@ -177,47 +181,32 @@ exports.authen = (req, res) => {
  *    RegisterRequest:
  *      type: object
  *      required:
- *        -username
+ *        -email
  *        -password
- *        -role
+ *        -fname
+ *        -lname
+ *        -dateOfBirth
  *      properties:
- *        username:
+ *        email:
  *          type: string
  *          description: The account username
  *        password:
  *          type: string
  *          description: The account password
- *        role:
+ *        fname:
  *          type: string
- *          description: The account role
+ *          description: The account first name
+ *        lname:
+ *          type: string
+ *          description: The account last name
+ *        dateOfBirth:
+ *          type: date
+ *          description: The account date of birth
  *    RegisterResponse:
  *      type: object
  *      properties:
- *        id:
+ *        message:
  *          type: string
- *          description: The auto-generated id of the account
- *        username:
- *          type: string
- *          description: The account username
- *        password:
- *          type: string
- *          description: The account password
- *        role:
- *          type: string
- *          description: The account role
- *        created_at:
- *          type: string
- *          description: The account created
- *        updated_at:
- *          type: string
- *          description: The account updated
- *
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
  *    LoginRequest:
  *      type: object
  *      required:
@@ -237,21 +226,34 @@ exports.authen = (req, res) => {
  *          type: string
  *          description: Then JWT token
  *    AuthenResponse:
- *      Type: object
+ *      type: object
  *      properties:
+ *        id:
+ *          type: string
+ *          description: The auto-generated id of the account
  *        email:
  *          type: string
  *          description: The account username
  *        fname:
  *          type: string
- *          description: The account username
+ *          description: The account role
  *        lname:
  *          type: string
- *          description: The account username
- *        dateOfBirth:
- *          type: date
- *          description: The account username
- *        id:
+ *          description: The account role
+ *        customer:
+ *          type: object
+ *          properties:
+ *            id:
+ *              type: number
+ *            account_id:
+ *              type: number
+ *            address:
+ *              type: string
+ *            image:
+ *              type: string
+ *        iat:
  *          type: number
- *          description: The account username
+ *        exp:
+ *          type: number
+ *          description: Token expire
  */

@@ -1,5 +1,25 @@
 const db = require("../config/mysql");
 
+/**
+ * @swagger
+ * /customer:
+ *  get:
+ *    summary: Show all customer
+ *    tags: [Customer]
+ *    responses:
+ *      200:
+ *        description: show all customer
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/CustomerResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
+
 exports.allCustomer = (req, res) => {
   try {
     db.query("select * from customer", (err, customer) => {
@@ -12,6 +32,29 @@ exports.allCustomer = (req, res) => {
   } catch (err) {}
 };
 
+/**
+ * @swagger
+ * /customer/{id}:
+ *  get:
+ *    summary: search customer by id
+ *    tags: [Customer]
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: number
+ *        required: true
+ *    responses:
+ *      200:
+ *        description: search customer by id
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/CustomerResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
 exports.findCustomerById = (req, res) => {
   const id = req.params.id;
   try {
@@ -25,6 +68,29 @@ exports.findCustomerById = (req, res) => {
   } catch (err) {}
 };
 
+/**
+ * @swagger
+ * /customer/edit:
+ *  put:
+ *    summary: Customer edit information
+ *    tags: [Customer]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/CustomerEditRequest'
+ *    responses:
+ *      200:
+ *        description: search customer by id
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/CustomerMsgResponse'
+ *      409:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
 exports.editCustomer = (req, res) => {
   const { id, account_id, address, fname, lname, email, image } = req.body;
   try {
@@ -44,6 +110,28 @@ exports.editCustomer = (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /customer/delete/{id}:
+ *  delete:
+ *    summary: search customer by id
+ *    tags: [Customer]
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: number
+ *        required: true
+ *    responses:
+ *      200:
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/CustomerMsgResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
 exports.deleteCustomer = (req, res) => {
   const id = req.params.id;
   try {
@@ -85,18 +173,71 @@ exports.deleteCustomer = (req, res) => {
   } catch (err) {}
 };
 
+/**
+ * @swagger
+ * /customer/favorite/{id}:
+ *  get:
+ *    summary: search all favorite for this customer
+ *    tags: [Customer]
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: number
+ *        required: true
+ *    responses:
+ *      200:
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/FavoriteResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
 exports.allFavoriteProduct = (req, res) => {
   const id = req.params.id;
   try {
-    db.query("select * from favorite where id ?", [id], (err, favorite) => {
-      if (err) {
-        return res.status(400).json({ favoriteMsg: err });
+    db.query(
+      "select * from favorite where customer_id = ?",
+      [id],
+      (err, favorite) => {
+        if (err) {
+          return res.status(400).json({ favoriteMsg: err });
+        }
+        res.json(favorite);
       }
-      res.json(favorite);
-    });
+    );
   } catch (error) {}
 };
 
+/**
+ * @swagger
+ * /customer/favorite/create:
+ *  post:
+ *    summary: Add favorite product for this customer
+ *    tags: [Customer]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/FavoriteCreateRequest'
+ *    responses:
+ *      200:
+ *        description: Add favorite successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/FavoriteCreateResponse'
+ *      409:
+ *        description: product favorite is duplicated
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
 exports.addFavorite = (req, res) => {
   const { product_id, customer_id } = req.body;
   try {
@@ -131,6 +272,29 @@ exports.addFavorite = (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /customer/favorite/delete:
+ *  delete:
+ *    summary: Add favorite product for this customer
+ *    tags: [Customer]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/FavoriteDeleteRequest'
+ *    responses:
+ *      200:
+ *        description: Delete favorite product successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/FavoriteDeleteResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
 exports.deleteFavorite = (req, res) => {
   const { product_id, customer_id } = req.body;
   try {
@@ -146,3 +310,100 @@ exports.deleteFavorite = (req, res) => {
     );
   } catch (error) {}
 };
+
+/**
+ * @swagger
+ * tags:
+ *    name: Account
+ *    description: Account management API
+ */
+
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *    CustomerResponse:
+ *      type: object
+ *      properties:
+ *        id:
+ *          type: number
+ *        account_id:
+ *          type: number
+ *        adress:
+ *          type: string
+ *        email:
+ *          type: string
+ *        fname:
+ *          type: string
+ *        lname:
+ *          type: string
+ *        image:
+ *          type: string
+ *    CustomerEditRequest:
+ *      type: object
+ *      required:
+ *        -id
+ *        -account_id
+ *        -address
+ *        -fname
+ *        -lname
+ *        -email
+ *        -image
+ *      properties:
+ *        id:
+ *          type: number
+ *        account_id:
+ *          type: number
+ *        address:
+ *          type: string
+ *        fname:
+ *          type: string
+ *        lname:
+ *          type: string
+ *        email:
+ *          type: string
+ *        image:
+ *          type: string
+ *    CustomerMsgResponse:
+ *      type: object
+ *      properties:
+ *        msg:
+ *          type: string
+ *    FavoriteResponse:
+ *      type: object
+ *      properties:
+ *        customer_id:
+ *          type: number
+ *        product_id:
+ *          type: number
+ *    FavoriteCreateResponse:
+ *      type: object
+ *      properties:
+ *        msg:
+ *          type: string
+ *    FavoriteCreateRequest:
+ *      type: object
+ *      requests:
+ *        -customer_id
+ *        -product_id
+ *      properties:
+ *        customer_id:
+ *          type: number
+ *        product_id:
+ *          type: number
+ *    FavoriteDeleteRequest:
+ *      type: object
+ *      requests:
+ *        -customer_id
+ *        -product_id
+ *      properties:
+ *        customer_id:
+ *          type: number
+ *        product_id:
+ *          type: number
+ *    FavoriteDeleteResponse:
+ *      type: object
+ *      properties:
+ *        msg:
+ *          type: string
+ */
