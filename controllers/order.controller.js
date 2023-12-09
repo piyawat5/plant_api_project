@@ -46,7 +46,7 @@ exports.allOrders = (req, res) => {
  *        content:
  *          application/json:
  *            schema:
- *              $ref: '#/component/schemas/OrderResponse'
+ *              $ref: '#/components/schemas/OrderResponse'
  *      400:
  *        description: something wrong
  *      404:
@@ -134,8 +134,11 @@ exports.findMyOrder = (req, res) => {
  *    summary: Customer add some product to cart
  *    tags: [Order]
  *    requestBody:
- *      schema:
- *        $ref: '#/components/schemas/PurchaseRequest'
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/PurchaseRequest'
  *    responses:
  *      200:
  *        content:
@@ -325,8 +328,11 @@ exports.purchaseProduct = async (req, res) => {
  *          type: number
  *        required: true
  *    requestBody:
- *      schema:
- *        $ref: '#/components/schemas/PurchaseDeleteRequest'
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/PurchaseDeleteRequest'
  *    responses:
  *      200:
  *        content:
@@ -380,7 +386,7 @@ exports.deleteOrder = (req, res) => {
  * @swagger
  * tags:
  *   name: Order
- *   description: Order customer api
+ *   description: Order customer API
  */
 
 /**

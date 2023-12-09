@@ -314,8 +314,8 @@ exports.deleteFavorite = (req, res) => {
 /**
  * @swagger
  * tags:
- *    name: Account
- *    description: Account management API
+ *    name: Customer
+ *    description: Customer management API
  */
 
 /**
