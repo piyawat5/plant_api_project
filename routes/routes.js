@@ -63,7 +63,7 @@ routes.put("/order/edit", verifyToken, orderControllers.editOrder);
 routes.delete("/order/delete/:id", verifyToken, orderControllers.deleteOrder);
 
 //product
-routes.get("/product", verifyToken, productControllers.allProducts);
+routes.get("/product", productControllers.allProducts);
 
 routes.get("/product/:id", verifyToken, productControllers.findProductById);
 
