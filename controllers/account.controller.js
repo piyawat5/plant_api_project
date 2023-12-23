@@ -121,7 +121,7 @@ exports.login = (req, res) => {
                   customer: customerObject,
                 },
                 process.env.SECRET_KEY,
-                { expiresIn: "3h" }
+                { expiresIn: "10h" }
               );
               res.json({ token });
             }

@@ -114,7 +114,7 @@ exports.editCustomer = (req, res) => {
  * @swagger
  * /customer/delete/{id}:
  *  delete:
- *    summary: search customer by id
+ *    summary: delete customer
  *    tags: [Customer]
  *    parameters:
  *      - in: path
@@ -276,7 +276,7 @@ exports.addFavorite = (req, res) => {
  * @swagger
  * /customer/favorite/delete:
  *  delete:
- *    summary: Add favorite product for this customer
+ *    summary: remove favorite product for this customer
  *    tags: [Customer]
  *    requestBody:
  *      required: true

@@ -20,7 +20,7 @@ const db = require("../config/mysql");
  */
 exports.allOrders = (req, res) => {
   try {
-    db.query("select * from order", (err, orders) => {
+    db.query("select * from order_customer", (err, orders) => {
       if (err) {
         return res.status(400).json({ ordersMsg: err });
       }
@@ -46,7 +46,7 @@ exports.allOrders = (req, res) => {
  *        content:
  *          application/json:
  *            schema:
- *              $ref: '#/components/schemas/OrderResponse'
+ *              $ref: '#/components/schemas/OrderIdResponse'
  *      400:
  *        description: something wrong
  *      404:
@@ -73,7 +73,7 @@ exports.findOrderById = (req, res) => {
               return res.status(404).json({ orderDetailMsg: err });
             }
             let data = {
-              order: order[0],
+              ...order[0],
               orderDetail: [...orderDetail],
             };
             res.json(data);
@@ -129,7 +129,7 @@ exports.findMyOrder = (req, res) => {
 
 /**
  * @swagger
- * /order/puchase:
+ * /order/purchase:
  *  post:
  *    summary: Customer add some product to cart
  *    tags: [Order]
@@ -317,6 +317,48 @@ exports.purchaseProduct = async (req, res) => {
 
 /**
  * @swagger
+ * /order/edit:
+ *  put:
+ *    summary: Admin edit status of customer order
+ *    tags: [Order]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/EditOrderRequest'
+ *    responses:
+ *      200:
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/EditOrderResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
+
+exports.editOrder = async (req, res) => {
+  const { order_status, id } = req.body;
+  try {
+    db.query(
+      "update order_customer set order_status = ? where id = ?",
+      [order_status, id],
+      (err, orderCustomerRes) => {
+        if (err) {
+          res.status(400).json({ msg: err });
+          return;
+        }
+        res.json({ msg: "Edit successfully!" });
+      }
+    );
+  } catch (err) {
+    return res.status(500).json({ catchErrMsg: err });
+  }
+};
+
+/**
+ * @swagger
  * /order/delete/{id}:
  *  delete:
  *    summary: Customer delete order list
@@ -396,8 +438,40 @@ exports.deleteOrder = (req, res) => {
  *    OrderResponse:
  *      type: object
  *      properties:
- *        msg:
+ *        id:
+ *          type: number
+ *        customer_id:
+ *          type: number
+ *        address:
  *          type: string
+ *        order_status:
+ *          type: string
+ *    OrderIdResponse:
+ *      type: object
+ *      properties:
+ *        id:
+ *          type: number
+ *        customer_id:
+ *          type: number
+ *        address:
+ *          type: string
+ *        order_status:
+ *          type: string
+ *        orderDetail:
+ *          type: array
+ *          items:
+ *            $ref: '#/components/schemas/OrderDetailDTO'
+ *    OrderDetailDTO:
+ *      type: object
+ *      properties:
+ *        order_customer_id:
+ *          type: number
+ *        product_id:
+ *          type: number
+ *        quantity:
+ *          type: number
+ *        price:
+ *          type: number
  *    PurchaseRequest:
  *      type: object
  *      required:
@@ -415,6 +489,21 @@ exports.deleteOrder = (req, res) => {
  *        price:
  *          type: number
  *    PurchaseResponse:
+ *      type: object
+ *      properties:
+ *        msg:
+ *          type: string
+ *    EditOrderRequest:
+ *      type: object
+ *      required:
+ *        -id
+ *        -order_status
+ *      properties:
+ *        id:
+ *          type: number
+ *        order_status:
+ *          type: string
+ *    EditOrderResponse:
  *      type: object
  *      properties:
  *        msg:

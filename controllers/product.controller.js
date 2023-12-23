@@ -104,7 +104,7 @@ exports.findProductById = async (req, res) => {
  *      content:
  *        application/json:
  *          schema:
- *            $ref: '#/components/schemas/ProductRequest'
+ *            $ref: '#/components/schemas/ProductCreateRequest'
  *    responses:
  *      200:
  *        content:
@@ -115,20 +115,25 @@ exports.findProductById = async (req, res) => {
  *        description: something wrong
  *    security: [{bearerAuth: []}]
  */
-exports.createProduct = (req, res) => {
-  const { category, name, stock, price, image, description } = req.body;
+exports.createProduct = async (req, res) => {
+  const { categoryName, name, stock, price, image, description } = req.body;
   try {
-    db.query(
-      "insert into product (category_id,name,stock,price,image,description) values(?,?,?,?,?,?)",
-      [category.id, name, stock, price, image, description],
-      (err, product) => {
-        if (err) {
-          return res.status(400).json({ createMsg: err });
-        }
-        return res.json({ msg: "Create product successfully!" });
-      }
+    const categoryId = await queryAsync(
+      "select id from category where name = ?",
+      [categoryName]
     );
-  } catch (err) {}
+
+    const createProduct = await queryAsync(
+      "insert into product (category_id,name,stock,price,image,description) values(?,?,?,?,?,?)",
+      [categoryId[0].id, name, stock, price, image, description]
+    );
+
+    if (createProduct) {
+      res.json({ msg: "create successfully!" });
+    }
+  } catch (err) {
+    res.status(500).json({ msg: err });
+  }
 };
 
 /**
@@ -158,16 +163,28 @@ exports.editProduct = (req, res) => {
   const { id, category, name, stock, price, image, description } = req.body;
   try {
     db.query(
-      "update product set name=?,category_id=?,stock=?,price=?,image=?,description=? where id=?",
-      [name, category.id, stock, price, image, description, id],
-      (err, product) => {
+      "select id from category where name = ?",
+      [category.name],
+      (err, categoryId) => {
         if (err) {
-          return res.status(400).json({ editMsg: err });
+          res.status(400).json(err);
+          return;
         }
-        return res.json({ msg: "Edit product successfully!" });
+        db.query(
+          "update product set name=?,category_id=?,stock=?,price=?,image=?,description=? where id=?",
+          [name, categoryId[0].id, stock, price, image, description, id],
+          (err, product) => {
+            if (err) {
+              return res.status(400).json({ editMsg: err });
+            }
+            return res.json({ msg: "Edit product successfully!" });
+          }
+        );
       }
     );
-  } catch (err) {}
+  } catch (err) {
+    res.status(500).json({ msg: err });
+  }
 };
 
 /**
@@ -203,19 +220,28 @@ exports.deleteProduct = (req, res) => {
         if (err) {
           return res.status(400).json({ deleteOrderDetailMsg: err });
         }
-        db.query(
-          "delete from product where id =?",
-          [id],
-          (err, deleteProduct) => {
-            if (err) {
-              return res.status(400).json({ deleteProductMsg: err });
-            }
-            return res.json({ msg: "Delete product successfully!" });
+        db.query("delete from favorite where product_id = ?", [id], (err) => {
+          if (err) {
+            return res.status(400).json({ favoriteDelMsg: err });
           }
-        );
+
+          db.query(
+            "delete from product where id =? ",
+            [id],
+            (err, deleteProduct) => {
+              if (err) {
+                return res.status(400).json({ deleteProductMsg: err });
+              }
+
+              return res.json({ msg: "Delete product successfully!" });
+            }
+          );
+        });
       }
     );
-  } catch (err) {}
+  } catch (err) {
+    res.status(500).json({ msg: err });
+  }
 };
 
 /**
@@ -243,6 +269,28 @@ exports.deleteProduct = (req, res) => {
  *              type: string
  *            description:
  *              type: string
+ *        name:
+ *          type: string
+ *        stock:
+ *          type: string
+ *        price:
+ *          type: string
+ *        image:
+ *          type: string
+ *        description:
+ *          type: string
+ *    ProductCreateRequest:
+ *      type: object
+ *      required:
+ *        -category
+ *        -name
+ *        -stock
+ *        -price
+ *        -image
+ *        -description
+ *      properties:
+ *        categoryName:
+ *          type: string
  *        name:
  *          type: string
  *        stock:
