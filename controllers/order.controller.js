@@ -65,18 +65,38 @@ exports.findOrderById = (req, res) => {
           res.status(400).json({ orderIdMsg: err });
           return;
         }
+
         db.query(
           "select * from order_detail where order_customer_id = ?",
-          [order[0].id],
-          (err, orderDetail) => {
+          [id],
+          (err, od) => {
             if (err) {
-              return res.status(404).json({ orderDetailMsg: err });
+              res.status(400).json({ msg: err });
+              return;
             }
-            let data = {
-              ...order[0],
-              orderDetail: [...orderDetail],
-            };
-            res.json(data);
+            let getOd = [...od];
+            db.query(
+              "select id,category_id,name,stock,product.price,image,description from order_detail join product on product.id = order_detail.product_id where order_customer_id = ?",
+              [id],
+              (err, orderDetail) => {
+                if (err) {
+                  res.status(400).json({ msg: err });
+                  return;
+                }
+                let newOrderDtail = getOd.map((item) => {
+                  let { product_id, ...newItem } = item;
+                  return {
+                    ...newItem,
+                    product: orderDetail.find((o) => o.id === product_id),
+                  };
+                });
+                let data = {
+                  ...order[0],
+                  orderDetail: [...newOrderDtail],
+                };
+                res.json(data);
+              }
+            );
           }
         );
       }
@@ -359,13 +379,23 @@ exports.editOrder = async (req, res) => {
 
 /**
  * @swagger
- * /order/delete/{id}:
+ * /order/delete/{id}?product_id={product_id}&quantity={quantity}:
  *  delete:
  *    summary: Customer delete order list
  *    tags: [Order]
  *    parameters:
  *      - in: path
  *        name: id
+ *        schema:
+ *          type: number
+ *        required: true
+ *      - in: query
+ *        name: product_id
+ *        schema:
+ *          type: number
+ *        required: true
+ *      - in: query
+ *        name: quantity
  *        schema:
  *          type: number
  *        required: true
@@ -388,28 +418,28 @@ exports.editOrder = async (req, res) => {
 
 exports.deleteOrder = (req, res) => {
   const id = req.params.id;
-  const { order_customer_id, product_id, quantity, price } = req.body;
+  const { product_id, quantity } = req.query;
   try {
     db.query(
       "select * from product where id = ?",
-      [product_id],
+      [+product_id],
       (err, product) => {
         if (err) {
           return res.status(400).json({ msg: err });
         }
         //Add stock
-        let newStock = product[0].stock + quantity;
+        let newStock = product[0].stock + Number(quantity);
         db.query(
           "update product set stock = ? where id = ?",
-          [newStock, product_id],
+          [newStock, product[0].id],
           (err, update) => {
             if (err) {
               return res.status(400).json({ msg: err });
             }
             //delete order detail
             db.query(
-              "delete from order_detail where order_customer_id = ? and product_id",
-              [id, product_id],
+              "delete from order_detail where order_customer_id = ? and product_id = ?",
+              [id, product[0].id],
               (err, data) => {
                 if (err) {
                   return res.status(400).json({ msg: err });
@@ -466,8 +496,21 @@ exports.deleteOrder = (req, res) => {
  *      properties:
  *        order_customer_id:
  *          type: number
- *        product_id:
- *          type: number
+ *        product:
+ *          type: object
+ *          properties:
+ *            id:
+ *              type: number
+ *            category_id:
+ *              type: number
+ *            name:
+ *              type: string
+ *            stock:
+ *              type: number
+ *            price:
+ *              type: number
+ *            image:
+ *              type: string
  *        quantity:
  *          type: number
  *        price:
