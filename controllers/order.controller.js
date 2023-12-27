@@ -384,7 +384,7 @@ exports.editOrder = async (req, res) => {
  * @swagger
  * /order/delete/{id}?product_id={product_id}&quantity={quantity}:
  *  delete:
- *    summary: Customer delete order list
+ *    summary: Customer delete order detail
  *    tags: [Order]
  *    parameters:
  *      - in: path
@@ -402,12 +402,6 @@ exports.editOrder = async (req, res) => {
  *        schema:
  *          type: number
  *        required: true
- *    requestBody:
- *      required: true
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/PurchaseDeleteRequest'
  *    responses:
  *      200:
  *        content:
@@ -419,7 +413,7 @@ exports.editOrder = async (req, res) => {
  *    security: [{bearerAuth: []}]
  */
 
-exports.deleteOrder = (req, res) => {
+exports.deleteOrderDetail = (req, res) => {
   const id = req.params.id;
   const { product_id, quantity } = req.query;
   try {
@@ -457,6 +451,42 @@ exports.deleteOrder = (req, res) => {
   } catch (err) {}
 };
 
+/**
+ * @swagger
+ * /order/deleteOrder/{id}:
+ *  delete:
+ *    summary: delete order
+ *    tags: [Order]
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: number
+ *        required: true
+ *    responses:
+ *      200:
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/PurchaseDeleteResponse'
+ *      400:
+ *        description: something wrong
+ *    security: [{bearerAuth: []}]
+ */
+
+exports.deleteOrder = async (req, res) => {
+  const id = req.params.id;
+  try {
+    await queryAsync("delete from order_detail where order_customer_id = ?", [
+      id,
+    ]);
+    await queryAsync("delete from order_customer where id = ?", [id]);
+
+    res.json({ msg: "Delete order successfully" });
+  } catch (err) {
+    res.status(500).json({ msg: err });
+  }
+};
 /**
  * @swagger
  * tags:
@@ -556,17 +586,6 @@ exports.deleteOrder = (req, res) => {
  *      properties:
  *        msg:
  *          type: string
- *    PurchaseDeleteRequest:
- *      type: object
- *      properties:
- *        order_customer_id:
- *          type: number
- *        product_id:
- *          type: number
- *        quantity:
- *          type: number
- *        price:
- *          type: number
  *    PurchaseDeleteResponse:
  *      type: object
  *      properties:

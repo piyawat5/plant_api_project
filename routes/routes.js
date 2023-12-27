@@ -60,7 +60,17 @@ routes.post("/order/purchase", verifyToken, orderControllers.purchaseProduct);
 
 routes.put("/order/edit", verifyToken, orderControllers.editOrder);
 
-routes.delete("/order/delete/:id", verifyToken, orderControllers.deleteOrder);
+routes.delete(
+  "/order/delete/:id",
+  verifyToken,
+  orderControllers.deleteOrderDetail
+);
+
+routes.delete(
+  "/order/deleteOrder/:id",
+  verifyToken,
+  orderControllers.deleteOrder
+);
 
 //product
 routes.get("/product", verifyToken, productControllers.allProducts);
