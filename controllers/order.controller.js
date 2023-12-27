@@ -222,8 +222,8 @@ exports.purchaseProduct = async (req, res) => {
                             return res.status(400).json({ err113Msg: err });
                           }
                           db.query(
-                            "update order_detail set quantity = ? where order_customer_id = ? and product_id = ?",
-                            [quantity, orderCustomer[0].id, product_id],
+                            "update order_detail set quantity = ?, price = ? where order_customer_id = ? and product_id = ?",
+                            [quantity, price, orderCustomer[0].id, product_id],
                             (err, updateOrderDetail) => {
                               if (err) {
                                 return res.status(400).json({ err13Msg: err });
@@ -359,19 +359,22 @@ exports.purchaseProduct = async (req, res) => {
  */
 
 exports.editOrder = async (req, res) => {
-  const { order_status, id } = req.body;
+  const { order_status, id, image = "" } = req.body;
+
   try {
-    db.query(
-      "update order_customer set order_status = ? where id = ?",
-      [order_status, id],
-      (err, orderCustomerRes) => {
-        if (err) {
-          res.status(400).json({ msg: err });
-          return;
-        }
-        res.json({ msg: "Edit successfully!" });
-      }
-    );
+    if (image) {
+      await queryAsync(
+        "update order_customer set order_status = ? ,image = ? where id = ?",
+        [order_status, image, id]
+      );
+    } else {
+      await queryAsync(
+        "update order_customer set order_status = ? where id = ?",
+        [order_status, id]
+      );
+    }
+
+    res.json({ msg: "Edit successfully!" });
   } catch (err) {
     return res.status(500).json({ catchErrMsg: err });
   }
@@ -545,6 +548,8 @@ exports.deleteOrder = (req, res) => {
  *        id:
  *          type: number
  *        order_status:
+ *          type: string
+ *        image:
  *          type: string
  *    EditOrderResponse:
  *      type: object
