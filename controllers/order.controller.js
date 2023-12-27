@@ -1,5 +1,17 @@
 const db = require("../config/mysql");
 
+const queryAsync = (sql, values) => {
+  return new Promise((resolve, reject) => {
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
+
 /**
  * @swagger
  * /order:
@@ -176,7 +188,7 @@ exports.purchaseProduct = async (req, res) => {
     db.query(
       "select * from order_customer where customer_id = ? and order_status = ?",
       [customer_id, "CURRENT"],
-      (err, orderCustomer) => {
+      async (err, orderCustomer) => {
         if (err) {
           return res.status(400).json({ err1Msg: err });
         }
@@ -276,58 +288,46 @@ exports.purchaseProduct = async (req, res) => {
           return;
         }
         // Create a new order for the customer
-        db.query(
+
+        await queryAsync(
           "insert into order_customer (customer_id,address,order_status) values(?,?,?)",
-          [customer_id, "", "CURRENT"],
-          (err, insertOrderCustomer) => {
-            if (err) {
-              return res.status(400).json({ data2Msg: err });
-            }
-            db.query(
-              "select * from order_customer where customer_id = ?",
-              [customer_id],
-              (err, orderCustomer) => {
-                if (err) {
-                  return res.status(400).json({ data3Msg: err });
-                }
-                db.query(
-                  "select * from product where id = ?",
-                  [product_id],
-                  (err, product) => {
-                    if (err) {
-                      return res.status(400).json({ data44Msg: err });
-                    }
-                    let result = product[0].stock - quantity;
-                    if (result >= 0) {
-                      db.query(
-                        "update product set stock = ? where id = ?",
-                        [result, product_id],
-                        (err, updateProduct) => {
-                          if (err) {
-                            return res.status(400).json({ data445Msg: err });
-                          }
-                          db.query(
-                            "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
-                            [orderCustomer[0].id, product_id, quantity, price],
-                            (err, data4) => {
-                              if (err) {
-                                return res.status(400).json({ data4Msg: err });
-                              }
-                              return res.json({
-                                msg4: "Add to cart Successfully!",
-                              });
-                            }
-                          );
-                        }
-                      );
-                      return;
-                    }
-                  }
-                );
-              }
-            );
-          }
+          [customer_id, "", "CURRENT"]
         );
+
+        const findOrderCustomer = await queryAsync(
+          "select * from order_customer where customer_id = ? and order_status = ?",
+          [customer_id, "CURRENT"]
+        );
+        const product = await queryAsync("select * from product where id = ?", [
+          product_id,
+        ]);
+
+        let result = product[0].stock - quantity;
+        if (result >= 0) {
+          db.query(
+            "update product set stock = ? where id = ?",
+            [result, product_id],
+            (err, updateProduct) => {
+              if (err) {
+                return res.status(400).json({ data445Msg: err });
+              }
+              db.query(
+                "insert into order_detail (order_customer_id,product_id,quantity,price) values(?,?,?,?)",
+                [findOrderCustomer[0].id, product_id, quantity, price],
+                (err, data4) => {
+                  if (err) {
+                    return res.status(400).json({ data4Msg: err });
+                  }
+                  return res.json({
+                    msg4: "Add to cart Successfully!",
+                  });
+                }
+              );
+            }
+          );
+          return;
+        }
+        return res.status(400).json({ msg: "Stock not enough" });
       }
     );
   } catch (err) {
