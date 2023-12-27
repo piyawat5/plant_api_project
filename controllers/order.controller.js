@@ -147,8 +147,8 @@ exports.findMyOrder = (req, res) => {
   const customerId = req.params.customerId;
   try {
     db.query(
-      "select * from order_customer where customer_id = ? and not order_status = ?",
-      [customerId, "CURRENT"],
+      "select * from order_customer where customer_id = ? ",
+      [customerId],
       (err, myOrder) => {
         if (err) {
           return res.status(400).json({ myOrderMsg: err });
