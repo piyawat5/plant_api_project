@@ -518,6 +518,8 @@ exports.deleteOrder = async (req, res) => {
  *          type: number
  *        address:
  *          type: string
+ *        image:
+ *          type: string
  *        order_status:
  *          type: string
  *        orderDetail:
