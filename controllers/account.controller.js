@@ -95,7 +95,7 @@ exports.login = (req, res) => {
     db.query(
       "select * from account where email = ?",
       [email],
-      (err, loginRes) => {
+      async (err, loginRes) => {
         if (err) {
           res.status(400).json({ loginMessage: err });
           return;
@@ -104,11 +104,12 @@ exports.login = (req, res) => {
           res.status(404).json({ loginMessage: "user not found" });
           return;
         }
-        bcrypt.compare(password, loginRes[0].password, (err, isLogin) => {
-          if (err) {
-            res.status(404).json({ messageComparePassword: err });
-            return;
-          }
+
+        if ((await bcrypt.compare(password, loginRes[0].password)) === false) {
+          res
+            .status(404)
+            .json({ messageComparePassword: "Password Incorrect" });
+        } else {
           db.query(
             "select * from customer where account_id = ?",
             [loginRes[0].id],
@@ -126,7 +127,7 @@ exports.login = (req, res) => {
               res.json({ token });
             }
           );
-        });
+        }
       }
     );
   } catch (err) {
