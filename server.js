@@ -11,7 +11,7 @@ app.use(express.urlencoded({ limit: "100000mb" }));
 app.use((req, res, next) => {
   res.header(
     "Access-Control-Allow-Origin",
-    "https://659687b343aecf5f66580f0c--melodic-beignet-a9ce33.netlify.app"
+    "https://melodic-beignet-a9ce33.netlify.app"
   );
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
