@@ -32,6 +32,7 @@ const queryAsync = (sql, values) => {
  */
 
 exports.allProducts = async (req, res) => {
+  let connection;
   try {
     const products = await queryAsync("SELECT * FROM product");
 
@@ -48,6 +49,10 @@ exports.allProducts = async (req, res) => {
     res.json(newProduct);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 
