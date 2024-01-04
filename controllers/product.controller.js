@@ -34,6 +34,7 @@ const queryAsync = (sql, values) => {
 exports.allProducts = async (req, res) => {
   let connection;
   try {
+    connection = await db.getConnection();
     const products = await queryAsync("SELECT * FROM product");
 
     const newProductPromises = products.map(async (product) => {
