@@ -6,8 +6,8 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./config/swagger");
 
 //Middlewares
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ limit: "25mb" }));
+app.use(express.json({ limit: "255mb" }));
+app.use(express.urlencoded({ limit: "255mb" }));
 app.use(cors());
 
 //routes
