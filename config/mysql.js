@@ -3,6 +3,7 @@ require("dotenv").config();
 
 //connection mysql2
 config = {
+  connectionLimit: 100,
   host: process.env.HOST_MYSQL,
   user: process.env.USER_MYSQL,
   password: process.env.PASSWORD_MYSQL,
