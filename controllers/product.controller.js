@@ -32,28 +32,30 @@ const queryAsync = (sql, values) => {
  */
 
 exports.allProducts = async (req, res) => {
-  let connection;
   try {
-    connection = await db.getConnection();
     const products = await queryAsync("SELECT * FROM product");
 
-    const newProductPromises = products.map(async (product) => {
-      const { category_id, ...productObj } = product;
-      const category = await queryAsync("SELECT * FROM category WHERE id = ?", [
-        category_id,
-      ]);
-      return { ...productObj, category: category[0] };
-    });
+    let getProducts = [...products];
+    db.query(
+      "SELECT category.id, category.name, category.description FROM product join category on category.id = product.category_id",
+      (err, category) => {
+        if (err) {
+          res.status(400).json({ getProductMsg: err });
+          return;
+        }
+        let newProducts = getProducts.map((p) => {
+          let { category_id, ...productObj } = p;
+          return {
+            ...productObj,
+            category: category.find((c) => category_id === c.id),
+          };
+        });
 
-    const newProduct = await Promise.all(newProductPromises);
-
-    res.json(newProduct);
+        res.json(newProducts);
+      }
+    );
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
